@@ -5,17 +5,17 @@ import (
 	"io"
 	"net/http"
 	"os"
-	"path/filepath"
+	"path"
 	"strconv"
 )
 
 // Function to upload the file to Nextcloud via the WebDAV path
 func uploadToNextcloud(filePath, nextcloudURL, username, password string, override bool) error {
 	// Get the base name of the file (e.g., "a.pdf")
-	fileName := filepath.Base(filePath)
+	fileName := path.Base(filePath)
 
 	// Construct the full URL for the file in Nextcloud
-	uploadURL := nextcloudURL + "/" + fileName
+	uploadURL := path.Join(nextcloudURL, fileName)
 
 	// Check if the file exists on Nextcloud
 	if !override {
@@ -56,6 +56,9 @@ func uploadToNextcloud(filePath, nextcloudURL, username, password string, overri
 	// Add HTTP Basic Auth
 	req.SetBasicAuth(username, password)
 
+	// Set Content-Type header
+	req.Header.Set("Content-Type", "application/octet-stream")
+
 	// Execute the HTTP request
 	client := &http.Client{}
 	resp, err := client.Do(req)
@@ -65,13 +68,14 @@ func uploadToNextcloud(filePath, nextcloudURL, username, password string, overri
 	defer resp.Body.Close()
 
 	// Check the response
+	body, _ := io.ReadAll(resp.Body)
 	if resp.StatusCode == http.StatusCreated || resp.StatusCode == http.StatusNoContent {
 		fmt.Printf("File uploaded successfully: %s\n", filePath)
 		return nil
 	}
 
-	// Handle any other response codes
-	body, _ := io.ReadAll(resp.Body)
+	// Print the response body for further debugging
+	fmt.Printf("Response body: %s\n", string(body))
 	return fmt.Errorf("error uploading file: status code: %d, response: %s", resp.StatusCode, string(body))
 }
 
