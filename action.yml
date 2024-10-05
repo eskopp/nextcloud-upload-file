@@ -1,26 +1,26 @@
-name: 'Nextcloud Upload File'
-description: 'A GitHub Action to upload a file to Nextcloud.'
+name: "Nextcloud Upload File"
+description: "A GitHub Action to upload a file to Nextcloud."
 inputs:
-  file_path:  
-    description: 'Path of the file to be uploaded'
+  file_path:
+    description: "Path of the file to be uploaded"
     required: true
-  nextcloud_url:  
-    description: 'URL of the Nextcloud server'
+  nextcloud_url:
+    description: "URL of the Nextcloud server"
     required: true
   username:
-    description: 'Username for Nextcloud'
+    description: "Username for Nextcloud"
     required: true
   password:
-    description: 'Password for Nextcloud'
+    description: "Password for Nextcloud"
     required: true
   override:
-    description: 'Set to true to overwrite the file if it exists'
+    description: "Set to true to overwrite the file if it exists"
     required: false
-    default: 'false'
+    default: "false"
 
 runs:
-  using: 'docker'
-  image: 'Dockerfile'
+  using: "docker"
+  image: "Dockerfile"
 branding:
-  icon: 'upload-cloud'
-  color: 'blue'
+  icon: "upload-cloud"
+  color: "blue"
