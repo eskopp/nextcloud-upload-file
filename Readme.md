@@ -1,4 +1,4 @@
-# Nextcloud Uploader Action (Python 3.12)
+# Nextcloud Uploader Action (Go 1.23)
 
 This action uploads a file to a Nextcloud server.
 
