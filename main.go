@@ -8,7 +8,30 @@ import (
 )
 
 // Function to upload the file to Nextcloud via the WebDAV path
-func uploadToNextcloud(filePath, nextcloudURL, username, password string) error {
+func uploadToNextcloud(filePath, nextcloudURL, username, password string, override bool) error {
+	// Check if the file exists on Nextcloud
+	if !override {
+		req, err := http.NewRequest("HEAD", nextcloudURL, nil)
+		if err != nil {
+			return fmt.Errorf("error creating HEAD request: %v", err)
+		}
+
+		// Add HTTP Basic Auth
+		req.SetBasicAuth(username, password)
+
+		client := &http.Client{}
+		resp, err := client.Do(req)
+		if err != nil {
+			return fmt.Errorf("error checking if file exists: %v", err)
+		}
+		defer resp.Body.Close()
+
+		// If the file exists (status 200), we don't want to overwrite it
+		if resp.StatusCode == http.StatusOK {
+			return fmt.Errorf("file already exists at %s, set override to true to overwrite", nextcloudURL)
+		}
+	}
+
 	// Open the local file
 	file, err := os.Open(filePath)
 	if err != nil {
@@ -50,6 +73,13 @@ func main() {
 	nextcloudURL := os.Getenv("INPUT_NEXTCLOUD_URL")
 	username := os.Getenv("INPUT_USERNAME")
 	password := os.Getenv("INPUT_PASSWORD")
+	override := os.Getenv("INPUT_OVERRIDE")
+
+	// Parse override flag
+	overrideFlag := false
+	if override == "true" {
+		overrideFlag = true
+	}
 
 	// Check if all variables are set
 	if filePath == "" || nextcloudURL == "" || username == "" || password == "" {
@@ -61,9 +91,10 @@ func main() {
 	fmt.Printf("file path: %s\n", filePath)
 	fmt.Printf("Nextcloud URL (WebDAV path): %s\n", nextcloudURL)
 	fmt.Printf("username: %s\n", username)
+	fmt.Printf("override: %v\n", overrideFlag)
 
 	// Perform the upload
-	err := uploadToNextcloud(filePath, nextcloudURL, username, password)
+	err := uploadToNextcloud(filePath, nextcloudURL, username, password, overrideFlag)
 	if err != nil {
 		fmt.Printf("an error occurred: %v\n", err)
 		os.Exit(1)

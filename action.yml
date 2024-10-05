@@ -13,9 +13,14 @@ inputs:
   password:
     description: 'Password for Nextcloud'
     required: true
+  override:
+    description: 'Set to true to overwrite the file if it exists'
+    required: false
+    default: 'false'  
+
 runs:
   using: 'docker'
   image: 'Dockerfile'
 branding:
-  icon: 'upload-cloud'  
-  color: 'blue'         
+  icon: 'upload-cloud'
+  color: 'blue'
