@@ -5,6 +5,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strconv"
 )
 
 // Function to upload the file to Nextcloud via the WebDAV path
@@ -73,16 +74,17 @@ func main() {
 	nextcloudURL := os.Getenv("INPUT_NEXTCLOUD_URL")
 	username := os.Getenv("INPUT_USERNAME")
 	password := os.Getenv("INPUT_PASSWORD")
-	override := os.Getenv("INPUT_OVERRIDE")
+	overrideStr := os.Getenv("INPUT_OVERRIDE")
 
 	// Parse override flag
-	overrideFlag := false
-	if override == "true" {
-		overrideFlag = true
+	overrideFlag, err := strconv.ParseBool(overrideStr)
+	if err != nil {
+		fmt.Printf("Invalid value for override flag. Must be true or false, received: %s\n", overrideStr)
+		os.Exit(1)
 	}
 
 	// Check if all variables are set
-	if filePath == "" || nextcloudURL == "" || username == "" || password == "" {
+	if filePath == "" || nextcloudURL == "" || username == "" || password == "" || overrideStr == "" {
 		fmt.Println("missing inputs! please ensure all necessary parameters are provided.")
 		os.Exit(1)
 	}
@@ -94,7 +96,7 @@ func main() {
 	fmt.Printf("override: %v\n", overrideFlag)
 
 	// Perform the upload
-	err := uploadToNextcloud(filePath, nextcloudURL, username, password, overrideFlag)
+	err = uploadToNextcloud(filePath, nextcloudURL, username, password, overrideFlag)
 	if err != nil {
 		fmt.Printf("an error occurred: %v\n", err)
 		os.Exit(1)
