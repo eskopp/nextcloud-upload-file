@@ -6,7 +6,7 @@ This action uploads a file to a Nextcloud server.
 
 ```yaml
 - name: Nextcloud Upload
-  uses: eskopp/nextcloud-upload-file@v0.0.1
+  uses: eskopp/nextcloud-upload-file@main
   with:
     file-path: './path/to/file'
     nextcloud-url: 'https://nextcloud.example.com/remote.php/webdav/'
