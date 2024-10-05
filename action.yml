@@ -1,0 +1,18 @@
+name: 'Nextcloud Upload File'
+description: 'A GitHub Action to upload a file to Nextcloud.'
+inputs:
+  file_path:  
+    description: 'Path of the file to be uploaded'
+    required: true
+  nextcloud_url:  
+    description: 'URL of the Nextcloud server'
+    required: true
+  username:
+    description: 'Username for Nextcloud'
+    required: true
+  password:
+    description: 'Password for Nextcloud'
+    required: true
+runs:
+  using: 'docker'
+  image: 'Dockerfile'
