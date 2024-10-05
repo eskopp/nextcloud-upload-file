@@ -5,14 +5,21 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strconv"
 )
 
 // Function to upload the file to Nextcloud via the WebDAV path
 func uploadToNextcloud(filePath, nextcloudURL, username, password string, override bool) error {
+	// Get the base name of the file (e.g., "a.pdf")
+	fileName := filepath.Base(filePath)
+
+	// Construct the full URL for the file in Nextcloud
+	uploadURL := nextcloudURL + "/" + fileName
+
 	// Check if the file exists on Nextcloud
 	if !override {
-		req, err := http.NewRequest("HEAD", nextcloudURL, nil)
+		req, err := http.NewRequest("HEAD", uploadURL, nil)
 		if err != nil {
 			return fmt.Errorf("error creating HEAD request: %v", err)
 		}
@@ -29,7 +36,7 @@ func uploadToNextcloud(filePath, nextcloudURL, username, password string, overri
 
 		// If the file exists (status 200), we don't want to overwrite it
 		if resp.StatusCode == http.StatusOK {
-			return fmt.Errorf("file already exists at %s, set override to true to overwrite", nextcloudURL)
+			return fmt.Errorf("file already exists at %s, set override to true to overwrite", uploadURL)
 		}
 	}
 
@@ -41,7 +48,7 @@ func uploadToNextcloud(filePath, nextcloudURL, username, password string, overri
 	defer file.Close()
 
 	// Create an HTTP PUT request for the upload
-	req, err := http.NewRequest("PUT", nextcloudURL, file)
+	req, err := http.NewRequest("PUT", uploadURL, file)
 	if err != nil {
 		return fmt.Errorf("error creating HTTP request: %v", err)
 	}
@@ -58,14 +65,14 @@ func uploadToNextcloud(filePath, nextcloudURL, username, password string, overri
 	defer resp.Body.Close()
 
 	// Check the response
-	if resp.StatusCode != http.StatusCreated {
-		body, _ := io.ReadAll(resp.Body)
-		return fmt.Errorf("error uploading file: status code: %d, response: %s", resp.StatusCode, string(body))
+	if resp.StatusCode == http.StatusCreated || resp.StatusCode == http.StatusNoContent {
+		fmt.Printf("File uploaded successfully: %s\n", filePath)
+		return nil
 	}
 
-	fmt.Printf("file uploaded successfully: %s\n", filePath)
-
-	return nil
+	// Handle any other response codes
+	body, _ := io.ReadAll(resp.Body)
+	return fmt.Errorf("error uploading file: status code: %d, response: %s", resp.StatusCode, string(body))
 }
 
 func main() {
@@ -84,7 +91,7 @@ func main() {
 	}
 
 	// Check if all variables are set
-	if filePath == "" || nextcloudURL == "" || username == "" || password == "" || overrideStr == "" {
+	if filePath == "" || nextcloudURL == "" || username == "" || password == "" {
 		fmt.Println("missing inputs! please ensure all necessary parameters are provided.")
 		os.Exit(1)
 	}
