@@ -24,6 +24,15 @@ WORKDIR /app
 # Install any necessary dependencies for alpine (if dynamic linking is required)
 RUN apk add --no-cache libc6-compat
 
+# Define an argument to accept the commit ID
+ARG COMMIT_ID
+
+# Set the commit ID as an environment variable
+ENV COMMIT_ID=$COMMIT_ID
+
+# Optionally, you can write the commit ID to a file for later use
+RUN echo "Commit ID: $COMMIT_ID" > /etc/commit_id
+
 # Copy the compiled Go binary from the builder
 COPY --from=builder /app/nextcloud_uploader /app/nextcloud_uploader
 
@@ -33,5 +42,5 @@ RUN chmod +x /app/nextcloud_uploader
 # Verify that the binary exists
 RUN ls -la /app/
 
-# Define entrypoint to run the Go binary
-ENTRYPOINT ["/app/nextcloud_uploader"]
+# Define entrypoint to run the Go binary, and print the commit ID
+ENTRYPOINT ["/bin/sh", "-c", "echo 'Commit ID: $COMMIT_ID'; cat /etc/commit_id; /app/nextcloud_uploader"]
