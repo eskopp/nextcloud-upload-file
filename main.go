@@ -5,17 +5,10 @@ import (
 	"io"
 	"net/http"
 	"os"
-	"path/filepath"
 )
 
 // Function to upload the file to Nextcloud via the WebDAV path
 func uploadToNextcloud(filePath, nextcloudURL, username, password string) error {
-	// Extract the file name from the file path
-	fileName := filepath.Base(filePath)
-
-	// Create the full URL for file upload
-	uploadURL := fmt.Sprintf("%s/%s", nextcloudURL, fileName)
-
 	// Open the local file
 	file, err := os.Open(filePath)
 	if err != nil {
@@ -24,7 +17,7 @@ func uploadToNextcloud(filePath, nextcloudURL, username, password string) error 
 	defer file.Close()
 
 	// Create an HTTP PUT request for the upload
-	req, err := http.NewRequest("PUT", uploadURL, file)
+	req, err := http.NewRequest("PUT", nextcloudURL, file)
 	if err != nil {
 		return fmt.Errorf("error creating HTTP request: %v", err)
 	}
