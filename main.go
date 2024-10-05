@@ -9,13 +9,18 @@ import (
 	"strconv"
 )
 
-// Function to upload the file to Nextcloud via the WebDAV path
+// Function to upload the file to Nextcloud via WebDAV
 func uploadToNextcloud(filePath, nextcloudURL, username, password string, override bool) error {
-	// Get the base name of the file (e.g., "a.pdf")
+	// Get the base name of the file (e.g., "test.css")
 	fileName := path.Base(filePath)
 
+	// Ensure nextcloudURL ends with a "/"
+	if nextcloudURL[len(nextcloudURL)-1] != '/' {
+		nextcloudURL += "/"
+	}
+
 	// Construct the full URL for the file in Nextcloud
-	uploadURL := path.Join(nextcloudURL, fileName)
+	uploadURL := nextcloudURL + fileName
 
 	// Check if the file exists on Nextcloud
 	if !override {
