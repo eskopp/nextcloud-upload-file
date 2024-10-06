@@ -10,9 +10,17 @@ import (
 )
 
 // Function to upload the file to Nextcloud via WebDAV
-func uploadToNextcloud(filePath, nextcloudURL, username, password string, override bool) error {
+func uploadToNextcloud(filePath, nextcloudURL, username, password, rename string, override bool) error {
 	// Get the base name of the file (e.g., "test.css")
 	fileName := path.Base(filePath)
+
+	// Check if the rename flag is set and not "false"
+	if rename != "" && rename != "false" {
+		fileName = rename
+		fmt.Printf("Renaming file to: %s\n", fileName)
+	} else {
+		fmt.Printf("No rename flag set, using original file name: %s\n", fileName)
+	}
 
 	// Ensure nextcloudURL ends with a "/"
 	if nextcloudURL[len(nextcloudURL)-1] != '/' {
@@ -91,6 +99,7 @@ func main() {
 	username := os.Getenv("INPUT_USERNAME")
 	password := os.Getenv("INPUT_PASSWORD")
 	overrideStr := os.Getenv("INPUT_OVERRIDE")
+	rename := os.Getenv("INPUT_RENAME")
 
 	// Parse override flag
 	overrideFlag, err := strconv.ParseBool(overrideStr)
@@ -110,9 +119,12 @@ func main() {
 	fmt.Printf("Nextcloud URL (WebDAV path): %s\n", nextcloudURL)
 	fmt.Printf("username: %s\n", username)
 	fmt.Printf("override: %v\n", overrideFlag)
+	if rename != "" && rename != "false" {
+		fmt.Printf("rename: %s\n", rename)
+	}
 
 	// Perform the upload
-	err = uploadToNextcloud(filePath, nextcloudURL, username, password, overrideFlag)
+	err = uploadToNextcloud(filePath, nextcloudURL, username, password, rename, overrideFlag)
 	if err != nil {
 		fmt.Printf("an error occurred: %v\n", err)
 		os.Exit(1)
