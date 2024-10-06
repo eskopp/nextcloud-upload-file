@@ -11,6 +11,16 @@ import (
 	"strconv"
 )
 
+// Function to rename a file
+func renameFile(originalPath, newPath string) error {
+	err := os.Rename(originalPath, newPath)
+	if err != nil {
+		return fmt.Errorf("error renaming file: %v", err)
+	}
+	fmt.Printf("File renamed successfully: %s -> %s\n", originalPath, newPath)
+	return nil
+}
+
 // Function to zip a file
 func zipFile(sourceFile, destinationZip string) error {
 	zipfile, err := os.Create(destinationZip)
@@ -54,11 +64,16 @@ func zipFile(sourceFile, destinationZip string) error {
 }
 
 // Function to upload the file to Nextcloud via WebDAV
-func uploadToNextcloud(filePath, nextcloudURL, username, password, rename string, override, zipFlag bool) error {
-	// Get the base name of the file (e.g., "test.css")
+func uploadToNextcloud(filePath, nextcloudURL, username, password string, override, zipFlag bool) error {
+	// Get the base name of the file (e.g., "search.css")
 	fileName := path.Base(filePath)
 
-	// If the zip flag is set, zip the file
+	// Ensure nextcloudURL ends with a "/"
+	if nextcloudURL[len(nextcloudURL)-1] != '/' {
+		nextcloudURL += "/"
+	}
+
+	// If zipFlag is true, zip the file
 	if zipFlag {
 		zipFilePath := filePath + ".zip"
 		err := zipFile(filePath, zipFilePath)
@@ -66,19 +81,8 @@ func uploadToNextcloud(filePath, nextcloudURL, username, password, rename string
 			return fmt.Errorf("error zipping file: %v", err)
 		}
 		filePath = zipFilePath       // Use the zipped file for upload
-		fileName = fileName + ".zip" // Rename the file for upload
+		fileName = fileName + ".zip" // Use the zipped file name for upload
 		fmt.Printf("Uploading zipped file: %s\n", fileName)
-	}
-
-	// If the rename flag is set and not "false", use the new file name
-	if rename != "" && rename != "false" {
-		fileName = rename
-		fmt.Printf("Renaming file to: %s\n", fileName)
-	}
-
-	// Ensure nextcloudURL ends with a "/"
-	if nextcloudURL[len(nextcloudURL)-1] != '/' {
-		nextcloudURL += "/"
 	}
 
 	// Construct the full URL for the file in Nextcloud
@@ -176,20 +180,21 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Display input values
-	fmt.Printf("file path: %s\n", filePath)
-	fmt.Printf("Nextcloud URL (WebDAV path): %s\n", nextcloudURL)
-	fmt.Printf("username: %s\n", username)
-	fmt.Printf("override: %v\n", overrideFlag)
+	// If the rename flag is set and not "false", rename the file
 	if rename != "" && rename != "false" {
-		fmt.Printf("rename: %s\n", rename)
+		newPath := filepath.Join(filepath.Dir(filePath), rename)
+		err := renameFile(filePath, newPath)
+		if err != nil {
+			fmt.Printf("An error occurred while renaming the file: %v\n", err)
+			os.Exit(1)
+		}
+		filePath = newPath
 	}
-	fmt.Printf("zip: %v\n", zipFlag)
 
-	// Perform the upload
-	err = uploadToNextcloud(filePath, nextcloudURL, username, password, rename, overrideFlag, zipFlag)
+	// Perform the upload (with zip if necessary)
+	err = uploadToNextcloud(filePath, nextcloudURL, username, password, overrideFlag, zipFlag)
 	if err != nil {
-		fmt.Printf("an error occurred: %v\n", err)
+		fmt.Printf("An error occurred: %v\n", err)
 		os.Exit(1)
 	}
 }
