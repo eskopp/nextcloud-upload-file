@@ -14,13 +14,17 @@ inputs:
     description: 'Password for Nextcloud'
     required: true
   override:
-    description: 'Optional: Set to true to overwrite the file if it exists (true/false)'
+    description: 'Set to true to overwrite the file if it exists (true/false)'
     required: false
     default: 'false'
   rename:
     description: 'Optional: New name for the file before upload'
     required: false
-    default: 'false' 
+    default: '' # Empty string means no renaming
+  zip:
+    description: 'Set to true if the file should be zipped before upload (true/false)'
+    required: false
+    default: 'false'
 
 runs:
   using: 'docker'

@@ -1,25 +1,79 @@
 package main
 
 import (
+	"archive/zip"
 	"fmt"
 	"io"
 	"net/http"
 	"os"
 	"path"
+	"path/filepath"
 	"strconv"
 )
 
+// Function to zip a file
+func zipFile(sourceFile, destinationZip string) error {
+	zipfile, err := os.Create(destinationZip)
+	if err != nil {
+		return fmt.Errorf("error creating zip file: %v", err)
+	}
+	defer zipfile.Close()
+
+	archive := zip.NewWriter(zipfile)
+	defer archive.Close()
+
+	fileToZip, err := os.Open(sourceFile)
+	if err != nil {
+		return fmt.Errorf("error opening file to zip: %v", err)
+	}
+	defer fileToZip.Close()
+
+	info, err := fileToZip.Stat()
+	if err != nil {
+		return fmt.Errorf("error getting file info: %v", err)
+	}
+
+	header, err := zip.FileInfoHeader(info)
+	if err != nil {
+		return fmt.Errorf("error creating zip header: %v", err)
+	}
+
+	header.Name = filepath.Base(sourceFile)
+	writer, err := archive.CreateHeader(header)
+	if err != nil {
+		return fmt.Errorf("error creating zip writer: %v", err)
+	}
+
+	_, err = io.Copy(writer, fileToZip)
+	if err != nil {
+		return fmt.Errorf("error writing to zip: %v", err)
+	}
+
+	fmt.Printf("File zipped successfully: %s\n", destinationZip)
+	return nil
+}
+
 // Function to upload the file to Nextcloud via WebDAV
-func uploadToNextcloud(filePath, nextcloudURL, username, password, rename string, override bool) error {
+func uploadToNextcloud(filePath, nextcloudURL, username, password, rename string, override, zipFlag bool) error {
 	// Get the base name of the file (e.g., "test.css")
 	fileName := path.Base(filePath)
 
-	// Check if the rename flag is set and not "false"
+	// If the zip flag is set, zip the file
+	if zipFlag {
+		zipFilePath := filePath + ".zip"
+		err := zipFile(filePath, zipFilePath)
+		if err != nil {
+			return fmt.Errorf("error zipping file: %v", err)
+		}
+		filePath = zipFilePath       // Use the zipped file for upload
+		fileName = fileName + ".zip" // Rename the file for upload
+		fmt.Printf("Uploading zipped file: %s\n", fileName)
+	}
+
+	// If the rename flag is set and not "false", use the new file name
 	if rename != "" && rename != "false" {
 		fileName = rename
 		fmt.Printf("Renaming file to: %s\n", fileName)
-	} else {
-		fmt.Printf("No rename flag set, using original file name: %s\n", fileName)
 	}
 
 	// Ensure nextcloudURL ends with a "/"
@@ -100,11 +154,19 @@ func main() {
 	password := os.Getenv("INPUT_PASSWORD")
 	overrideStr := os.Getenv("INPUT_OVERRIDE")
 	rename := os.Getenv("INPUT_RENAME")
+	zipStr := os.Getenv("INPUT_ZIP")
 
 	// Parse override flag
 	overrideFlag, err := strconv.ParseBool(overrideStr)
 	if err != nil {
 		fmt.Printf("Invalid value for override flag. Must be true or false, received: %s\n", overrideStr)
+		os.Exit(1)
+	}
+
+	// Parse zip flag
+	zipFlag, err := strconv.ParseBool(zipStr)
+	if err != nil {
+		fmt.Printf("Invalid value for zip flag. Must be true or false, received: %s\n", zipStr)
 		os.Exit(1)
 	}
 
@@ -122,9 +184,10 @@ func main() {
 	if rename != "" && rename != "false" {
 		fmt.Printf("rename: %s\n", rename)
 	}
+	fmt.Printf("zip: %v\n", zipFlag)
 
 	// Perform the upload
-	err = uploadToNextcloud(filePath, nextcloudURL, username, password, rename, overrideFlag)
+	err = uploadToNextcloud(filePath, nextcloudURL, username, password, rename, overrideFlag, zipFlag)
 	if err != nil {
 		fmt.Printf("an error occurred: %v\n", err)
 		os.Exit(1)
