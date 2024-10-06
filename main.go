@@ -12,7 +12,7 @@ import (
 	"time"
 )
 
-// Function to rename a file
+// Function to rename a file physically
 func renameFile(originalPath, newPath string) error {
 	err := os.Rename(originalPath, newPath)
 	if err != nil {
@@ -64,10 +64,10 @@ func zipFile(sourceFile, destinationZip string) error {
 	return nil
 }
 
-// Function to append date and/or time to the filename
-func appendDateTime(fileName string, dateFlag, timeFlag bool) string {
-	ext := filepath.Ext(fileName)
-	baseName := fileName[0 : len(fileName)-len(ext)]
+// Function to append date and/or time to the filename and physically rename the file
+func appendDateTimeAndRename(filePath string, dateFlag, timeFlag bool) (string, error) {
+	ext := filepath.Ext(filePath)
+	baseName := filePath[0 : len(filePath)-len(ext)]
 
 	// Get current date and time
 	currentTime := time.Now()
@@ -78,7 +78,16 @@ func appendDateTime(fileName string, dateFlag, timeFlag bool) string {
 		baseName += currentTime.Format("_15_04_05") // Append time
 	}
 
-	return baseName + ext
+	// New file name with date/time
+	newPath := baseName + ext
+
+	// Rename the file physically
+	err := renameFile(filePath, newPath)
+	if err != nil {
+		return "", err
+	}
+
+	return newPath, nil
 }
 
 // Function to upload the file to Nextcloud via WebDAV
@@ -224,10 +233,14 @@ func main() {
 		filePath = newPath
 	}
 
-	// Append date/time to the file name if flags are true
+	// Append date/time to the file name and physically rename the file if flags are true
 	if dateFlag || timeFlag {
-		filePath = appendDateTime(filePath, dateFlag, timeFlag)
-		fmt.Printf("File renamed with date/time: %s\n", filePath)
+		newFilePath, err := appendDateTimeAndRename(filePath, dateFlag, timeFlag)
+		if err != nil {
+			fmt.Printf("An error occurred while renaming the file with date/time: %v\n", err)
+			os.Exit(1)
+		}
+		filePath = newFilePath
 	}
 
 	// Perform the upload (with zip if necessary)
