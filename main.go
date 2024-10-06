@@ -189,6 +189,8 @@ func main() {
 			os.Exit(1)
 		}
 		filePath = newPath
+	} else {
+		fmt.Println("No renaming will be done, 'rename' is either empty or set to false.")
 	}
 
 	// Perform the upload (with zip if necessary)
