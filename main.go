@@ -9,6 +9,7 @@ import (
 	"path"
 	"path/filepath"
 	"strconv"
+	"time"
 )
 
 // Function to rename a file
@@ -61,6 +62,23 @@ func zipFile(sourceFile, destinationZip string) error {
 
 	fmt.Printf("File zipped successfully: %s\n", destinationZip)
 	return nil
+}
+
+// Function to append date and/or time to the filename
+func appendDateTime(fileName string, dateFlag, timeFlag bool) string {
+	ext := filepath.Ext(fileName)
+	baseName := fileName[0 : len(fileName)-len(ext)]
+
+	// Get current date and time
+	currentTime := time.Now()
+	if dateFlag {
+		baseName += currentTime.Format("_2006_01_02") // Append date
+	}
+	if timeFlag {
+		baseName += currentTime.Format("_15_04_05") // Append time
+	}
+
+	return baseName + ext
 }
 
 // Function to upload the file to Nextcloud via WebDAV
@@ -159,6 +177,8 @@ func main() {
 	overrideStr := os.Getenv("INPUT_OVERRIDE")
 	rename := os.Getenv("INPUT_RENAME")
 	zipStr := os.Getenv("INPUT_ZIP")
+	dateStr := os.Getenv("INPUT_DATE")
+	timeStr := os.Getenv("INPUT_TIME")
 
 	// Parse override flag
 	overrideFlag, err := strconv.ParseBool(overrideStr)
@@ -171,6 +191,19 @@ func main() {
 	zipFlag, err := strconv.ParseBool(zipStr)
 	if err != nil {
 		fmt.Printf("Invalid value for zip flag. Must be true or false, received: %s\n", zipStr)
+		os.Exit(1)
+	}
+
+	// Parse date and time flags
+	dateFlag, err := strconv.ParseBool(dateStr)
+	if err != nil {
+		fmt.Printf("Invalid value for date flag. Must be true or false, received: %s\n", dateStr)
+		os.Exit(1)
+	}
+
+	timeFlag, err := strconv.ParseBool(timeStr)
+	if err != nil {
+		fmt.Printf("Invalid value for time flag. Must be true or false, received: %s\n", timeStr)
 		os.Exit(1)
 	}
 
@@ -189,8 +222,12 @@ func main() {
 			os.Exit(1)
 		}
 		filePath = newPath
-	} else {
-		fmt.Println("No renaming will be done, 'rename' is either empty or set to false.")
+	}
+
+	// Append date/time to the file name if flags are true
+	if dateFlag || timeFlag {
+		filePath = appendDateTime(filePath, dateFlag, timeFlag)
+		fmt.Printf("File renamed with date/time: %s\n", filePath)
 	}
 
 	// Perform the upload (with zip if necessary)

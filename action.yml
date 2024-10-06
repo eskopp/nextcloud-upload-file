@@ -1,35 +1,38 @@
-name: 'Nextcloud Upload File'
-description: 'A GitHub Action to upload a file to Nextcloud.'
-inputs:
-  file_path:  
-    description: 'Path of the file to be uploaded'
-    required: true
-  nextcloud_url:  
-    description: 'URL of the Nextcloud server'
-    required: true
-  username:
-    description: 'Username for Nextcloud'
-    required: true
-  password:
-    description: 'Password for Nextcloud'
-    required: true
-  override:
-    description: 'Set to true to overwrite the file if it exists (true/false)'
-    required: false
-    default: 'false'
-  rename:
-    description: 'Optional: New name for the file before upload'
-    required: false
-    default: '' # Empty string means no renaming
-  zip:
-    description: 'Set to true if the file should be zipped before upload (true/false)'
-    required: false
-    default: 'false'
+name: 'Upload File to Nextcloud'
 
-runs:
-  using: 'docker'
-  image: 'Dockerfile'
+on:
+  workflow_dispatch:
+    inputs:
+      file_path:
+        description: 'Path of the file to upload'
+        required: true
+      nextcloud_url:
+        description: 'Nextcloud WebDAV URL'
+        required: true
+      username:
+        description: 'Nextcloud Username'
+        required: true
+      password:
+        description: 'Nextcloud Password'
+        required: true
+      override:
+        description: 'Overwrite the file if it exists (true/false)'
+        required: false
+        default: 'false'
+      rename:
+        description: 'Optional: New name for the file before upload'
+        required: false
+        default: ''
+      zip:
+        description: 'Set to true if the file should be zipped before upload (true/false)'
+        required: false
+        default: 'false'
+      date:
+        description: 'Set to true if the current date should be appended to the file name (true/false)'
+        required: false
+        default: 'false'
+      time:
+        description: 'Set to true if the current time should be appended after the date (if set) (true/false)'
+        required: false
+        default: 'false'
 
-branding:
-  icon: 'upload-cloud'
-  color: 'blue'
